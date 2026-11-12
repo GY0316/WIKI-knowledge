@@ -26,6 +26,22 @@ CLAUDE.md   Claude Code 规则    AGENTS.md  Codex/OpenCode 规则（内容相�
 
 规则细节见 `CLAUDE.md`。
 
+### Skills 与脚本
+
+`.claude/skills/` 下有 `ingest`、`query`、`lint`、`evolve` 四个 skill，对应上面的操作加一个学习回顾：
+
+- `evolve` — 盘点覆盖度与薄弱点，更新 `wiki/gaps.md`（学习缺口清单），建议下一步读什么
+
+学习闭环：query / lint / evolve 发现缺口 → 登记到 `gaps.md` → 你找到资料放进 `raw/` → ingest 回答缺口并移到「已解决」。
+
+脚本：
+
+```bash
+python3 scripts/lint.py          # 死链、孤儿页、索引缺失、frontmatter、待 ingest 资料
+scripts/sync_rules.sh            # CLAUDE.md -> AGENTS.md
+scripts/sync_rules.sh --check    # 仅检查两份规则是否一致
+```
+
 ### 可选：安装成熟的 skill
 
 ```bash

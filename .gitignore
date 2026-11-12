@@ -1,0 +1,14 @@
+# Obsidian：排除频繁变化的界面状态，保留插件/图谱配置
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+*.swp

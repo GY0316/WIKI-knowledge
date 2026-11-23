@@ -6,5 +6,6 @@
   "tabSize": 5,
   "readableLineLength": true,
   "strictLineBreaks": true,
-  "rightToLeft": false
+  "rightToLeft": false,
+  "alwaysUpdateLinks": true
 }

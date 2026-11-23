@@ -1,0 +1,4 @@
+.markdown-preview-view,
+.markdown-source-view .cm-sizer {
+  --file-line-width: 1100px;  /* 想要多宽写多宽 */
+}

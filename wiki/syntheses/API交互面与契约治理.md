@@ -635,18 +635,18 @@ initialize → notifications/initialized → tools/list → tools/call …
 
 ## 五、OpenAPI 与 MCP 对照
 
-| 维度 | OpenAPI | MCP |
-|---|---|---|
-| 面向对象 | 人、代码生成器、网关 | LLM / Agent 运行时 |
-| 契约位置 | 仓库里的静态文档 | 运行时 `tools/list` + 仓库 manifest |
-| 结构描述 | `components.schemas` | `inputSchema` / `outputSchema` |
-| 语义描述 | summary / description / example，人读 | description 直接影响模型选择；title；annotations |
-| 副作用提示 | 无标准字段 | readOnlyHint / destructiveHint / idempotentHint / openWorldHint |
-| 错误 | HTTP 状态码 + 错误 schema | `isError` 结果 + JSON-RPC error |
-| 鉴权 | securitySchemes | 传输层 + 应用层策略，工具级 scope 自建 |
-| 发现 | registry / 版本化制品 | `initialize` + `tools/list`，可分页 |
-| 版本 | URL major + 字段 deprecated | 工具名 + schema + protocolVersion |
-| 适合 | 确定性集成、批量、前端 | 模型自主选择工具、自然语言驱动 |
+| 维度    | OpenAPI                            | MCP                                                             |
+| ----- | ---------------------------------- | --------------------------------------------------------------- |
+| 面向对象  | 人、代码生成器、网关                         | LLM / Agent 运行时                                                 |
+| 契约位置  | 仓库里的静态文档                           | 运行时 `tools/list` + 仓库 manifest                                  |
+| 结构描述  | `components.schemas`               | `inputSchema` / `outputSchema`                                  |
+| 语义描述  | summary / description / example，人读 | description 直接影响模型选择；title；annotations                          |
+| 副作用提示 | 无标准字段                              | readOnlyHint / destructiveHint / idempotentHint / openWorldHint |
+| 错误    | HTTP 状态码 + 错误 schema               | `isError` 结果 + JSON-RPC error                                   |
+| 鉴权    | securitySchemes                    | 传输层 + 应用层策略，工具级 scope 自建                                        |
+| 发现    | registry / 版本化制品                   | `initialize` + `tools/list`，可分页                                 |
+| 版本    | URL major + 字段 deprecated          | 工具名 + schema + protocolVersion                                  |
+| 适合    | 确定性集成、批量、前端                        | 模型自主选择工具、自然语言驱动                                                 |
 
 一句话：**OpenAPI 描述“怎么调”，MCP 额外描述“为什么调、能不能调、调了有什么后果”**。同一能力做两套绑定时，用例和字段说明应该同源，避免两边说法不一致。
 
@@ -713,11 +713,11 @@ sequenceDiagram
 
 先纠正一个常见混淆：**Outbox 不是“事件处理类型”，也不是“状态同步”或“消息订阅”本身**。它是让“写业务数据”和“发事件”原子化的可靠性机制。三个维度是正交的：
 
-| 维度 | 回答的问题 | 例子 |
-|---|---|---|
-| 事件语义 | 这条事件表达什么 | 状态同步、通知、主数据变更 |
+| 维度    | 回答的问题    | 例子              |
+| ----- | -------- | --------------- |
+| 事件语义  | 这条事件表达什么 | 状态同步、通知、主数据变更   |
 | 可靠性机制 | 怎么保证事件不丢 | Outbox、重试、幂等、死信 |
-| 投递通道 | 事件走哪条路 | 消息中间件、Webhook |
+| 投递通道  | 事件走哪条路   | 消息中间件、Webhook   |
 
 “状态同步”和“消息订阅”是**目的**；“消息中间件”和“Webhook”是**通道**；Outbox 是**保证**。三者可以任意组合，不要混为一谈。
 
@@ -1040,13 +1040,13 @@ class LegacyErpPartAdapter:
 
 四个版本轴，不要混成一个：
 
-| 版本对象 | 载体 | 破坏性变更怎么处理 |
-|---|---|---|
-| 部署版本 | 镜像 tag / commit | 与契约无关，部署 50 次也不该动 API 版本 |
-| HTTP 契约 | `/v1` + 字段级 deprecated + Sunset | 新 major 并行运行，按调用量下线 |
-| 事件契约 | envelope `schema_version` + schema registry | 新事件类型或新 major，双发过渡 |
-| MCP 工具 | 工具名 + input/output schema + protocolVersion | 新工具名，旧工具保留并标 deprecated |
-| B 类适配层 | 我们自己的 client 版本 | 适配层升级，内部契约不变 |
+| 版本对象    | 载体                                          | 破坏性变更怎么处理                |
+| ------- | ------------------------------------------- | ------------------------ |
+| 部署版本    | 镜像 tag / commit                             | 与契约无关，部署 50 次也不该动 API 版本 |
+| HTTP 契约 | `/v1` + 字段级 deprecated + Sunset             | 新 major 并行运行，按调用量下线      |
+| 事件契约    | envelope `schema_version` + schema registry | 新事件类型或新 major，双发过渡       |
+| MCP 工具  | 工具名 + input/output schema + protocolVersion | 新工具名，旧工具保留并标 deprecated  |
+| B 类适配层  | 我们自己的 client 版本                             | 适配层升级，内部契约不变             |
 
 兼容规则：
 

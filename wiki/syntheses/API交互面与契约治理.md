@@ -54,16 +54,16 @@ flowchart TB
 
 ### 3.1 顶层结构
 
-| 字段 | 内容 | FastAPI 来源 |
-|---|---|---|
-| `openapi` | 规范版本，通常是 `3.1.0` | 框架默认 |
-| `info` | title、version、description、contact、license | `FastAPI(...)` 参数 |
-| `servers` | 部署地址与前缀 | `root_path` / `servers=` |
-| `tags` | 分组与说明 | 路由 `tags=`、`openapi_tags=` |
-| `paths` | 每个路径 + 方法 + 参数 + 请求体 + 响应 | 路由装饰器 + 函数签名 |
-| `components.schemas` | Pydantic 模型转成的 JSON Schema | 模型定义 |
-| `components.securitySchemes` | Bearer / OAuth2 / API Key | `Security()` 依赖 |
-| `security` | 全局默认鉴权要求 | 同上 |
+| 字段                           | 内容                                        | FastAPI 来源                 |
+| ---------------------------- | ----------------------------------------- | -------------------------- |
+| `openapi`                    | 规范版本，通常是 `3.1.0`                          | 框架默认                       |
+| `info`                       | title、version、description、contact、license | `FastAPI(...)` 参数          |
+| `servers`                    | 部署地址与前缀                                   | `root_path` / `servers=`   |
+| `tags`                       | 分组与说明                                     | 路由 `tags=`、`openapi_tags=` |
+| `paths`                      | 每个路径 + 方法 + 参数 + 请求体 + 响应                 | 路由装饰器 + 函数签名               |
+| `components.schemas`         | Pydantic 模型转成的 JSON Schema                | 模型定义                       |
+| `components.securitySchemes` | Bearer / OAuth2 / API Key                 | `Security()` 依赖            |
+| `security`                   | 全局默认鉴权要求                                  | 同上                         |
 
 ### 3.2 一个完整的例子
 

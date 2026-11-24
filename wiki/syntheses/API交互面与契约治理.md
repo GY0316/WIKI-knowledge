@@ -264,21 +264,21 @@ flowchart TB
 
 ### 3.3 哪些自动生成，哪些必须显式声明
 
-| 内容 | 来源 | 是否自动 |
-|---|---|---|
-| 路径、方法、参数、请求体 | 路由与函数签名 | 自动 |
-| 200 响应 schema | `response_model` 或返回类型标注 | 自动 |
-| 422 校验错误 | 有参数或请求体时 | 自动 |
-| 模型字段类型、必填、枚举、格式、约束 | Pydantic 模型 | 自动 |
-| 字段说明 | `Field(description=...)` 或 `Annotated` | 自动 |
-| 示例 | `Field(examples=[...])`、`Body(examples=...)` | 自动 |
-| 接口简述与详细说明 | `summary=`、docstring | 自动 |
-| 分组 | `tags=` | 自动 |
-| 弃用标记 | `deprecated=True` | 自动 |
-| 401/403/404/409/500 的错误体 | `responses={...: {"model": Error}}` | **需手写** |
-| 全局鉴权方案 | `Security()` 依赖 | 部分自动，需确认 |
-| 服务地址、联系方式、许可证 | `FastAPI(servers=..., contact=..., license_info=...)` | **需手写** |
-| 回调、链接 | OpenAPI 支持 | FastAPI 不自动生成 |
+| 内容                       | 来源                                                    | 是否自动          |
+| ------------------------ | ----------------------------------------------------- | ------------- |
+| 路径、方法、参数、请求体             | 路由与函数签名                                               | 自动            |
+| 200 响应 schema            | `response_model` 或返回类型标注                              | 自动            |
+| 422 校验错误                 | 有参数或请求体时                                              | 自动            |
+| 模型字段类型、必填、枚举、格式、约束       | Pydantic 模型                                           | 自动            |
+| 字段说明                     | `Field(description=...)` 或 `Annotated`                | 自动            |
+| 示例                       | `Field(examples=[...])`、`Body(examples=...)`          | 自动            |
+| 接口简述与详细说明                | `summary=`、docstring                                  | 自动            |
+| 分组                       | `tags=`                                               | 自动            |
+| 弃用标记                     | `deprecated=True`                                     | 自动            |
+| 401/403/404/409/500 的错误体 | `responses={...: {"model": Error}}`                   | **需手写**       |
+| 全局鉴权方案                   | `Security()` 依赖                                       | 部分自动，需确认      |
+| 服务地址、联系方式、许可证            | `FastAPI(servers=..., contact=..., license_info=...)` | **需手写**       |
+| 回调、链接                    | OpenAPI 支持                                            | FastAPI 不自动生成 |
 
 最常见的坑：**只写了 200，没写 404/409**。调用方只能靠猜，生成的客户端也不会给错误类型。错误体还应该用稳定的 `code` 字段，而不是让人解析 `message`。
 

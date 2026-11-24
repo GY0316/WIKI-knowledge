@@ -1,7 +1,7 @@
 ---
 title: 学习缺口
 type: gaps
-updated: 2026-11-12
+updated: 2026-11-24
 ---
 
 # 学习缺口
@@ -15,6 +15,11 @@ updated: 2026-11-12
 - [ ] 多头注意力各头学到什么不同关系？ — 由 [[注意力机制]] 引出 — 论文 / 可视化分析文章
 - [ ] 星标里 12 个 `#agent-skills` 哪些真正可用？ — 星数不能代表质量 — 实跑 3 个后写评测页
 - [ ] 用户自己的 star 列表（Lists）分组要不要纳入？ — API 不返回该数据 — 网页端导出清单
+- [ ] REST / SOAP / gRPC / GraphQL / WebSocket / WebRTC 的系统对比与选型判据 — 2026-11-24 query 发现库内只有 HTTP/OpenAPI/MCP 与 Webhook 片段，没有独立协议页 — 各协议官方规范 + 工程实践文章，产出 syntheses
+- [ ] SSE、JSON-RPC、MQTT、AMQP/Kafka、tRPC、WebTransport 等补充协议的定位 — 同上，七种协议之外还有常用通道 — 官方文档与选型对比
+- [ ] WebRTC 的 STUN/TURN 部署与 SFU/MCU 选型 — 同上，库内完全空白 — 工程实践与运维文档
+- [ ] Agent 开发岗位的能力模型、简历表述与面试考察点 — 2026-11-24 面试准备讨论，库内只有 MCP 工具契约，没有岗位与面经资料 — 招聘 JD、面经、真实项目拆解
+- [ ] 虾测（LobstestAI）与 workbody（按 CodeBuddy 理解）的产品边界 — 2026-11-24 整理稿基于名称与描述推断，未核实 — 产品文档 / 实际试用
 
 ## 已解决
 

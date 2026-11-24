@@ -14,7 +14,7 @@ sources: []
 
 ## 结论
 
-DDD 用于识别业务边界、领域模型和数据责任，不等同于微服务，也不要求一个业务模块对应一个独立部署的服务。MVC 与 DDD 不冲突：MVC 可组织接口适配层，DDD 用于业务建模和模块边界。
+DDD 用于识别业务边界、领域模型和数据责任，不等同于微服务，也不要求一个业务模块对应一个独立部署的服务。MVC 与 DDD 不冲突：MVC 可组织接口适配层，DDD 用于业务建模和模块边界。这种分层落到代码里是什么样子，见下文《项目目录：DDD 分层中的 MVC》。
 
 建议采用渐进路径：
 
@@ -25,34 +25,406 @@ DDD 用于识别业务边界、领域模型和数据责任，不等同于微服�
 5. 只有独立发布、扩缩容、故障隔离或团队自治需求明确时，才将模块拆为服务；前端也只有在独立发布确有价值时再考虑微前端。
 6. OpenAPI/HTTP 作为普通服务调用的明确契约；MCP 作为 Agent 发现和调用能力的适配层，不替代核心业务 API 或事件契约。
 
+## 项目目录：DDD 分层中的 MVC
+
+外层按限界上下文分包，内层按 DDD 分层；MVC 的 Controller、View、Model 各自落在对应层，而不是在整个项目里铺一层 `controllers/`、`models/`。下面是一个 FastAPI 模块化单体的目录示例（只展开 `parts_test`，其余上下文结构相同）：
+
+```text
+test-center/
+├── app/
+│   ├── main.py                         # 组装 FastAPI、注册路由、中间件
+│   ├── config.py
+│   │
+│   ├── contexts/                       # 限界上下文：每个上下文一个包
+│   │   ├── parts_test/                 # 零部件试验
+│   │   │   ├── domain/                 # 领域层：不依赖任何外层
+│   │   │   │   ├── model/
+│   │   │   │   │   ├── test_task.py    # 实体、聚合根
+│   │   │   │   │   ├── sample.py
+│   │   │   │   │   └── value_objects.py
+│   │   │   │   ├── service/
+│   │   │   │   │   └── scheduling.py   # 领域服务
+│   │   │   │   ├── repository.py       # 仓储端口（接口）
+│   │   │   │   └── events.py           # 领域事件
+│   │   │   ├── application/            # 应用层：用例编排、事务边界
+│   │   │   │   ├── use_cases/
+│   │   │   │   │   ├── create_task.py
+│   │   │   │   │   └── submit_result.py
+│   │   │   │   ├── dto.py              # 用例输入/输出
+│   │   │   │   └── ports.py            # 外部依赖端口
+│   │   │   ├── infrastructure/         # 基础设施层：实现端口
+│   │   │   │   ├── persistence/
+│   │   │   │   │   ├── models.py       # SQLAlchemy 模型（数据模型）
+│   │   │   │   │   ├── repository.py   # 仓储实现
+│   │   │   │   │   └── mapper.py       # 领域对象 ↔ ORM 行
+│   │   │   │   ├── acl/
+│   │   │   │   │   └── legacy_erp.py   # 防腐层适配器
+│   │   │   │   └── outbox.py
+│   │   │   └── api/                    # 接口层：Controller / View Model
+│   │   │       ├── router.py           # Controller
+│   │   │       ├── schemas.py          # Pydantic 请求/响应模型
+│   │   │       └── dependencies.py     # 鉴权、分页等依赖
+│   │   │
+│   │   ├── powertrain_test/
+│   │   ├── road_test/
+│   │   ├── vehicle_maintenance/
+│   │   ├── software_maintenance/
+│   │   ├── test_order/
+│   │   ├── equipment/
+│   │   ├── report/
+│   │   └── master_data/
+│   │
+│   ├── shared_kernel/                  # 值对象、单位量纲、错误模型、事件信封
+│   │   ├── value_objects.py
+│   │   ├── errors.py
+│   │   └── events.py
+│   │
+│   ├── platform/                       # 通用域：IAM、审批、通知、文件、审计
+│   │   ├── iam/
+│   │   ├── workflow/
+│   │   ├── notify/
+│   │   ├── files/
+│   │   └── audit/
+│   │
+│   └── bootstrap/                      # 依赖注入、订阅注册、启动装配
+│       ├── container.py
+│       └── subscriptions.py
+│
+├── contracts/                          # 契约制品
+│   ├── openapi/
+│   ├── mcp/
+│   └── events/
+│
+├── migrations/                         # 迁移按上下文分目录
+│   ├── parts_test/
+│   └── ...
+│
+├── tests/
+│   ├── unit/                           # 领域层，不依赖数据库
+│   ├── integration/                    # 仓储、ACL、Outbox
+│   └── contract/                       # OpenAPI / 事件 / MCP schema 校验
+│
+├── pyproject.toml
+└── README.md
+```
+
+MVC 与目录的对应关系：
+
+| MVC 角色 | 目录位置 | 职责 | 不应该做什么 |
+|---|---|---|---|
+| Model（领域模型） | `contexts/*/domain/model/` | 实体、值对象、业务规则 | 不依赖 FastAPI、SQLAlchemy |
+| Model（持久化模型） | `contexts/*/infrastructure/persistence/models.py` | 表结构映射 | 不承载业务规则 |
+| Model（视图模型） | `contexts/*/api/schemas.py` | 请求/响应结构、字段校验 | 不写业务规则 |
+| View | `api/schemas.py` + `response_model` | JSON 序列化、字段裁剪 | 不做权限和业务判断 |
+| Controller | `contexts/*/api/router.py` | 参数解析、鉴权入口、调用用例、异常映射 | 不写业务规则 |
+| Service（MVC 常见） | `contexts/*/application/use_cases/` | 用例编排、事务边界 | 不直接拼 SQL |
+| DAO / Repository | `domain/repository.py`（接口）+ `infrastructure/persistence/repository.py`（实现） | 接口与实现分离 | 不在接口里暴露 ORM 对象 |
+
+关键点：**MVC 的“Model”是一个被重载的词**。在 MVC 里它常指数据模型或视图模型；在 DDD 里它拆成三个东西——领域模型（业务规则）、持久化模型（表结构）、视图模型（API 结构）。混用这三者，就会得到“ORM 实体直接当 API 响应、业务规则写在 Pydantic schema 里”的典型烂结构。
+
+一次请求的调用链：
+
+```mermaid
+flowchart TB
+    HTTP["HTTP 请求"] --> C["api/router.py<br/>Controller"]
+    C --> REQ["api/schemas.py<br/>请求模型"]
+    C --> U["application/use_cases<br/>用例编排 / 事务边界"]
+    U --> D["domain/model<br/>实体·值对象·领域服务"]
+    U --> P["domain/repository.py<br/>仓储端口"]
+    P -.实现.-> I["infrastructure/persistence<br/>ORM·仓储实现"]
+    U --> RESP["api/schemas.py<br/>响应模型"]
+    D --> EV["domain/events.py"] --> OB["infrastructure/outbox.py"]
+    OB --> RELAY["Outbox relay"]
+```
+
+依赖方向：
+
+- `api → application → domain`；`infrastructure → domain`（实现端口）；`domain` 不依赖任何外层。
+- `api` 不直接 import `infrastructure`；具体实现在 `bootstrap/container.py` 装配。
+- 上下文之间只通过 application 用例或公开接口调用，不 import 对方的 `domain/`。
+- `shared_kernel` 保持最小；`utils/` 不要变成跨上下文的万能层。
+
+为什么顶层按上下文分包，而不是按 `models/`、`controllers/` 分包：
+
+- 按层分包会让跨上下文 import 变得很容易，边界很快模糊；按上下文分包，谁拥有什么数据一眼可见。
+- 将来把某个上下文拆成独立服务时，主要是搬一个目录、把进程内调用换成 HTTP/事件，业务代码不动。
+- 每个上下文可以有自己的测试、迁移和代码所有者，和 [[测试业务DDD上下文划分]] 的边界一一对应。
+
 ## 架构关系图
 
 ### 后端业务边界与部署演进
 
+以下以测试中心为例，业务线包括整车试验、零部件试验、道路试验、车辆维护、软件维护。阶段一和阶段二共用同一套限界上下文，区别只在部署单元和通信方式：阶段一在进程内调用，阶段二把同一套 application 用例暴露成 HTTP/OpenAPI 和事件。
+
+#### 阶段一：模块化单体
+
 ```mermaid
 flowchart TB
-    Caller[React / 上下游系统 / Agent] --> HTTP[FastAPI Router / HTTP API]
-    HTTP --> UC[业务 application 用例]
-    Agent[Agent] --> MCP[MCP 适配层]
+    Caller["React 管理台 / 上下游系统 / Agent"]
+    Caller --> HTTP["FastAPI Router / HTTP API<br/>OpenAPI 契约"]
+    Caller --> MCP["MCP 适配层<br/>工具契约"]
+    HTTP --> UC["application 用例"]
     MCP --> UC
+    UC --> DOM["领域规则与状态迁移"]
+    DOM --> DB[("本模块拥有的数据")]
+    UC --> OB[("Outbox 事件表")]
+    OB --> EV["消息平台 / Webhook"]
+    EV --> SUB["订阅方更新投影或触发流程"]
 
-    UC --> Domain[领域规则与状态迁移]
-    Domain --> Owner[(本模块拥有的数据)]
-    UC --> Outbox[(Outbox 事件表)]
-    Outbox --> Events[消息平台 / Webhook]
-    Events --> Consumers[订阅方更新投影或触发流程]
-
-    subgraph ModularMonolith[阶段一：模块化单体]
-      HTTP
-      MCP
-      UC
-      Domain
-      Owner
-      Outbox
+    subgraph MM["阶段一：模块化单体（一个部署单元）"]
+        HTTP
+        MCP
+        UC
+        DOM
+        DB
+        OB
     end
 
-    ModularMonolith -. 边界稳定且存在独立运行需求后 .-> Microservices[阶段二：选择性拆成独立服务]
+    MM -. 边界稳定且存在独立运行需求后 .-> MS["阶段二：选择性拆成独立服务"]
 ```
+
+要点：
+
+- 一个 FastAPI 应用，按上下文分包；每个包内部再分 `domain / application / infrastructure / api`。
+- HTTP 和 MCP 只是入口，共用同一个 application 用例，不各写一套业务规则。
+- Outbox 表在同一个数据库，relay 可以在进程内，也可以独立进程。
+- 此时不要让模块之间走 HTTP 自调用，直接调公开的 application 接口。
+
+#### 阶段二：独立服务
+
+##### 2.1 部署拓扑与访问路径
+
+```mermaid
+flowchart TB
+    subgraph CLIENT["访问方"]
+        UI["React 管理台<br/>Shell + 业务子前端"]
+        AG["Agent / 自动化"]
+        EXT["外部系统<br/>客户门户 / ERP / PLM"]
+    end
+
+    GW["接入网关 / BFF<br/>OIDC 认证 · 限流 · 版本路由 · 审计"]
+    MG["MCP 网关<br/>工具级鉴权 · 写操作审批 · 审计"]
+
+    subgraph BIZ["业务服务（独立部署）"]
+        VH["整车试验服务"]
+        PT["零部件试验服务"]
+        RT["道路试验服务"]
+        VM["车辆维护服务"]
+        SW["软件维护服务"]
+    end
+
+    subgraph SUP["支撑服务（独立部署）"]
+        TO["委托与受理服务"]
+        EQ["设备与计量服务"]
+        RP["报告与证书服务"]
+        MD["主数据服务"]
+    end
+
+    subgraph PLAT["平台能力"]
+        IAM["身份与授权"]
+        WF["审批与流程"]
+        NT["通知中心"]
+        FS["文件与审计"]
+    end
+
+    UI --> GW
+    EXT --> GW
+    AG --> MG
+    GW --> VH
+    GW --> PT
+    GW --> RT
+    GW --> VM
+    GW --> SW
+    GW --> TO
+    GW --> EQ
+    GW --> RP
+    GW --> MD
+    MG --> VH
+    MG --> PT
+    MG --> RT
+    MG --> VM
+    MG --> SW
+    BIZ --> SUP
+    SUP --> PLAT
+```
+
+说明：
+
+- 五条业务线各自部署、各自数据库；支撑服务被多条业务线复用，但不拥有业务执行逻辑。
+- 网关只做横切（认证、限流、版本路由、审计），业务聚合放 BFF；MCP 走独立网关，因为工具级鉴权和写操作审批的粒度与 REST 不同。
+- 平台能力可以是共享服务，也可以是库，取决于是否多语言、是否要独立运维。
+
+##### 2.2 同步协作：HTTP + OpenAPI
+
+原则：需要立即结果的查询和命令走 HTTP；每个服务发布 OpenAPI 制品，消费方 pin 主版本，网关按主版本路由。
+
+**业务服务 → 支撑服务**（查询主数据、设备预约）：
+
+```mermaid
+flowchart LR
+    BIZ["五个业务服务<br/>整车 / 零部件 / 道路 / 车辆维护 / 软件维护"]
+    MD["主数据服务<br/>GET /v1/parts<br/>GET /v1/vehicles<br/>GET /v1/standards"]
+    EQ["设备与计量服务<br/>GET /v1/equipment<br/>POST /v1/bookings"]
+    RP["报告与证书服务<br/>POST /v1/reports"]
+
+    BIZ -->|"OpenAPI 查询"| MD
+    BIZ -->|"OpenAPI 查询 / 预约"| EQ
+    BIZ -->|"OpenAPI 提交结果"| RP
+```
+
+**业务服务之间**（车辆维护、软件维护与试验线）：
+
+```mermaid
+flowchart LR
+    VH["整车试验"]
+    RT["道路试验"]
+    VM["车辆维护"]
+    SW["软件维护"]
+    TO["委托与受理"]
+    RP["报告与证书"]
+
+    TO -->|"POST /v1/tasks"| VH
+    TO -->|"POST /v1/tasks"| RT
+    VH -->|"GET 车辆状态"| VM
+    RT -->|"GET 车辆状态"| VM
+    VH -->|"GET 软件基线"| SW
+    RT -->|"GET 软件基线"| SW
+    VH -->|"POST /v1/reports"| RP
+    RT -->|"POST /v1/reports"| RP
+    VM -.->|"VehicleStatusChanged"| VH
+    VM -.->|"VehicleStatusChanged"| RT
+    SW -.->|"SoftwareBaselineReleased"| VH
+    SW -.->|"SoftwareBaselineReleased"| RT
+```
+
+实线是同步 HTTP，虚线是事件；两类线不要混用成同一种“通知”。关键接口：
+
+| 调用方 | 被调方 | 方法与路径 | 用途 |
+|---|---|---|---|
+| 业务服务 | 主数据 | `GET /v1/parts/{part_no}`、`GET /v1/vehicles/{vin}`、`GET /v1/standards/{code}` | 查询主数据 |
+| 业务服务 | 设备与计量 | `GET /v1/equipment`、`POST /v1/bookings` | 查设备能力与预约 |
+| 委托与受理 | 整车/零部件/道路 | `POST /v1/tasks` | 下发试验任务 |
+| 整车/道路 | 车辆维护 | `GET /v1/vehicles/{vin}/status` | 查车辆可用性与维护状态 |
+| 整车/道路 | 软件维护 | `GET /v1/software/baselines?ecu=...` | 查 ECU 软件基线 |
+| 业务服务 | 报告与证书 | `POST /v1/reports` | 提交结果、生成报告 |
+
+##### 2.3 异步协作：Outbox + 事件 + 订阅
+
+每个发布方有自己的 outbox 表；内部消费者走消息中间件，外部订阅方走 Webhook。事件信封、重试、死信和幂等的细节见 [[API交互面与契约治理]]。
+
+```mermaid
+flowchart LR
+    subgraph P["发布方（各自 Outbox）"]
+        TO["委托与受理"]
+        VH["整车试验"]
+        PT["零部件试验"]
+        RT["道路试验"]
+        VM["车辆维护"]
+        SW["软件维护"]
+        EQ["设备与计量"]
+        MD["主数据"]
+    end
+
+    MQ["消息中间件<br/>内部订阅"]
+    WH["Webhook 投递器<br/>外部订阅"]
+
+    TO -.->|"TestOrderAccepted"| MQ
+    VH -.->|"TestResultSubmitted"| MQ
+    PT -.->|"TestResultSubmitted"| MQ
+    RT -.->|"TestResultSubmitted"| MQ
+    VM -.->|"VehicleStatusChanged"| MQ
+    SW -.->|"SoftwareBaselineReleased"| MQ
+    EQ -.->|"EquipmentStatusChanged"| MQ
+    MD -.->|"MasterDataChanged"| MQ
+
+    MQ -.-> RP["报告与证书"]
+    MQ -.-> DASH["统计与看板"]
+    MQ -.-> AGENT["Agent 事件源"]
+    MQ -.-> WH
+    WH -.-> PORTAL["客户门户 / 外部系统"]
+```
+
+主要事件：
+
+| 事件 | 发布方 | 主要订阅方 | 用途 |
+|---|---|---|---|
+| `TestOrderAccepted` | 委托与受理 | 整车/零部件/道路 | 创建试验任务 |
+| `TestResultSubmitted` | 整车/零部件/道路 | 报告与证书、看板 | 生成报告 |
+| `EquipmentStatusChanged` | 设备与计量 | 三条试验线 | 校准、维修、停用感知 |
+| `VehicleStatusChanged` | 车辆维护 | 整车/道路 | 车辆可用性变化 |
+| `MaintenanceCompleted` | 车辆维护 | 整车/道路、看板 | 维护完成 |
+| `SoftwareBaselineReleased` | 软件维护 | 整车/道路 | 软件基线发布 |
+| `FlashCompleted` | 软件维护 | 整车/道路 | 刷写完成 |
+| `MasterDataChanged` | 主数据 | 全部服务 | 主数据变更 |
+| `ReportApproved` | 报告与证书 | 委托与受理、客户门户 | 报告可交付 |
+
+规则：事件只表达已发生的事实，不当远程命令；消费方按 `event_id` 幂等；跨聚合不保证顺序；关键状态用推送 + 查询对账，不假设事件永不丢。
+
+##### 2.4 数据所有权与部署单元
+
+```mermaid
+flowchart TB
+    subgraph BIZ["业务服务与自有数据库"]
+        VH["整车试验"] --- VHDB[("整车试验库<br/>计划·工况·结果")]
+        PT["零部件试验"] --- PTDB[("零部件试验库<br/>样件·任务·原始记录")]
+        RT["道路试验"] --- RTDB[("道路试验库<br/>路线·里程·现场事件")]
+        VM["车辆维护"] --- VMDB[("车辆维护库<br/>台账·保养·维修")]
+        SW["软件维护"] --- SWDB[("软件维护库<br/>基线·刷写记录")]
+    end
+
+    subgraph SUP["支撑服务与自有数据库"]
+        TO["委托与受理"] --- TODB[("委托库")]
+        EQ["设备与计量"] --- EQDB[("设备库")]
+        RP["报告与证书"] --- RPDB[("报告库")]
+        MD["主数据"] --- MDDB[("主数据库")]
+    end
+
+    MD -.->|"ID 引用 + 必要快照"| VH
+    MD -.-> PT
+    MD -.-> RT
+    MD -.-> VM
+    MD -.-> SW
+```
+
+数据归属：
+
+| 服务 | 拥有的数据 | 明确不拥有 |
+|---|---|---|
+| 整车试验 | 试验计划、工况、整车试验结果 | 车辆台账、零件主数据 |
+| 零部件试验 | 样件、试验任务、原始记录 | 零件主数据、设备台账 |
+| 道路试验 | 路线、里程、现场事件 | 车辆台账、驾驶员资质 |
+| 车辆维护 | 车辆台账、保养计划、维修工单 | 试验结果 |
+| 软件维护 | ECU 软件基线、刷写记录 | 车型配置、试验结果 |
+| 委托与受理 | 委托单、受理状态 | 试验执行细节 |
+| 设备与计量 | 设备台账、校准、预约 | 试验结果 |
+| 报告与证书 | 报告、证书 | 原始试验数据（只引用） |
+| 主数据 | 零件、车型、标准、组织、客户 | 业务记录 |
+
+三条硬规则：
+
+1. 一个数据对象只有一个权威写入方；其他服务通过命令或 API 发起变更。
+2. 其他服务只存 ID 引用和必要快照，保证历史可解释；不跨库 join。
+3. 物理数据库可以同实例，但逻辑 schema、迁移责任和访问账号必须分开；拆服务时再迁到独立库。
+
+##### 2.5 契约与通信方式总览
+
+| 方式 | 图上线型 | 契约 | 适用 | 失败处理 |
+|---|---|---|---|---|
+| 同步 HTTP | 实线 | OpenAPI 制品 | 查询、命令 | 超时、重试、熔断、降级 |
+| 异步事件 | 虚线 | 事件 envelope + schema | 状态传播 | Outbox、幂等、死信、重放 |
+| Webhook | 点线 | 订阅契约 + HMAC 签名 | 外部通知 | 重试、死信、自动停用 |
+| MCP | 网关到工具 | tool manifest | Agent 调用 | `isError`、审批、审计 |
+
+```mermaid
+flowchart LR
+    CODE["服务代码<br/>Pydantic 模型"] --> CI["CI：生成 + diff + 破坏性检查"]
+    CI --> CR[("契约仓库<br/>openapi / mcp / events")]
+    CR --> GW["网关路由 / 前端客户端生成"]
+    CR --> MG["MCP manifest"]
+    CR --> REVIEW["评审与文档"]
+```
+
+讲解时建议按“访问路径 → 同步调用 → 异步事件 → 数据归属 → 契约”的顺序展开，每张图只回答一个问题，不要在一张图里同时讲部署、调用和数据。
 
 ### 多团队协同建设统一管理台
 
@@ -97,7 +469,7 @@ flowchart TB
 - 外部 HTTP 请求进入 Router/Controller，再转到 application 用例；模块内协作直接调用公开的 application 接口，不通过 HTTP 自调用。
 - 同步 HTTP API 适合需要立即结果的查询或命令。OpenAPI 描述路径、参数、响应和错误契约，可用于文档与客户端生成。
 - 事件表达已发生的事实，如 `TaskCreated`、`TestReportSubmitted`。它适合状态传播和解耦订阅方，不应被当成无约束的远程命令通道。
-- Outbox 将业务数据和待发送事件写入同一数据库事务，后台投递程序负责重试。消费者需要按事件 ID 去重并幂等处理；另需监控、死信/失败处置和定期对账。
+- Outbox 将业务数据和待发送事件写入同一数据库事务，后台投递程序负责重试。消费者需要按事件 ID 去重并幂等处理；另需监控、死信/失败处置和定期对账。表结构、relay 与投递通道（中间件 vs Webhook）的细节见 [[API交互面与契约治理]]。
 - 若上下游由其他团队维护，先确认 webhook、消息平台、CDC/变更流、增量查询或批量文件能力。只有查询 API 时，需轮询和对账；主动通知必须由对方提供推送能力或共同建设消息通道。
 - 若双方都能修改同一业务事实，必须先定义权威来源、冲突处理和审批规则；双向通知本身不能解决并发覆盖。
 
@@ -142,6 +514,7 @@ flowchart TB
 ## 引用的页面
 
 - [[测试业务DDD上下文划分]]：本文方法论的落地案例，含四条试验业务线的上下文地图、场景时序图与主数据提取判据。
+- [[API交互面与契约治理]]：服务拆开后的接口面设计，含 OpenAPI/MCP 报文、版本兼容与双向读写规则。
 
 ## 外部参考
 

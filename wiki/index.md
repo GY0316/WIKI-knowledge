@@ -14,6 +14,8 @@ updated: 2026-11-24
 > 方法论、架构模式、第一性原理、技术概念
 
 - [[注意力机制]] — （示例）让模型为序列每个位置动态分配关注权重的机制
+- [[Agent适用性判据]] — 用“路径可枚举 + 可验证反馈”判断该用 workflow、agent 还是确定性工具
+- [[多智能体适用边界]] — 五个正当理由、三类伪理由、成本清单、四种拓扑与接缝失效
 
 ## 实体 entities
 
@@ -42,3 +44,5 @@ updated: 2026-11-24
 - [[API交互面与契约治理]] — 三类接口（MCP、无 OpenAPI 的 HTTP、FastAPI）的契约、版本、订阅与双向读写设计，含 Outbox 投递、ACL 防腐层与完整报文示例
 - [[通讯协议对比与选型]] — REST/SOAP/gRPC/GraphQL/Webhook/WebSocket/WebRTC 的分层、报文、代码与坑，补 SSE、MQTT、Kafka 等遗漏协议和选型矩阵
 - [[AI术语分层与Agent产品形态]] — 按模型/能力/产品/岗位四层拆解 AI 术语，含 Agent 判定三条件、Workflow 边界与网页版/CLI/Desktop 对比
+- [[测试业务链的Agent落点]] — 需求→策划→用例→执行→报告五段的 Agent 适用性、形态与落地顺序
+- [[PCB检查的Agent架构]] — 确定性引擎检查、Agent 调度分诊、LLM 解释表达的 L0-L5 分层

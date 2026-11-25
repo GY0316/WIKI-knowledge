@@ -15,6 +15,10 @@ updated: 2026-11-24
 - [ ] 多头注意力各头学到什么不同关系？ — 由 [[注意力机制]] 引出 — 论文 / 可视化分析文章
 - [ ] 星标里 12 个 `#agent-skills` 哪些真正可用？ — 星数不能代表质量 — 实跑 3 个后写评测页
 - [ ] 用户自己的 star 列表（Lists）分组要不要纳入？ — API 不返回该数据 — 网页端导出清单
+- [ ] 前端状态管理怎么选（Redux/Zustand/Jotai/Pinia）？ — 视频只提了一句“状态管理”，无细节 — 对比文章 + 各库文档
+- [ ] CSS 方案演进（Tailwind 原子化 / CSS Modules / CSS-in-JS）？ — 视频转写“把类继承格式写成纯字母串”，含义不清 — 专题文章
+- [ ] Vite+ 的定位、能力与收费模式？ — 视频只提到“想统一包管理器和 lint/format/test 配置” — 官方文档
+- [ ] Element 2 / Element Plus / Element3 的版本与维护关系？ — 视频说法需要一手核实 — Element Plus 官方仓库与文档
 - [ ] REST / SOAP / gRPC / GraphQL / WebSocket / WebRTC 的系统对比与选型判据 — 2026-11-24 query 发现库内只有 HTTP/OpenAPI/MCP 与 Webhook 片段，没有独立协议页 — 各协议官方规范 + 工程实践文章，产出 syntheses
 - [ ] SSE、JSON-RPC、MQTT、AMQP/Kafka、tRPC、WebTransport 等补充协议的定位 — 同上，七种协议之外还有常用通道 — 官方文档与选型对比
 - [ ] WebRTC 的 STUN/TURN 部署与 SFU/MCU 选型 — 同上，库内完全空白 — 工程实践与运维文档
